@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -18,7 +17,7 @@ class TableConfig(BaseModel):
 
 class MergeConfig(BaseModel):
     single_fields_by_header: Dict[str, Tuple[str, str]]        # "HeaderBrutto": ["FoglioTgt","B5"]
-    table_mappings: Dict[str, TableConfig]                      # "FoglioBrutto": TableConfig
+    table_mappings: Dict[str, TableConfig]                     # "FoglioBrutto": TableConfig
     single_fields_by_cell: Optional[Dict[str, Tuple[str, str]]] = None  # "FoglioSrc!B3": ["FoglioTgt","E9"]
 
 def _header_index_map(ws, header_row=1):
@@ -127,7 +126,16 @@ async def merge_excel(
     out_bytes = BytesIO()
     wb_tgt.save(out_bytes)  # preserva macro se c’erano (.xlsm)
     out_bytes.seek(0)
+
     filename = "output_finale.xlsm" if tpl_name.endswith(".xlsm") else "output_finale.xlsx"
-    media = "application/vnd.ms-excel.sheet.macroEnabled.12" if filename.endswith(".xlsm")             else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    return StreamingResponse(out_bytes, media_type=media,
-                             headers={"Content-Disposition": f'attachment; filename=\"%s\"" % filename})
+    media = (
+        "application/vnd.ms-excel.sheet.macroEnabled.12"
+        if filename.endswith(".xlsm")
+        else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    return StreamingResponse(
+        out_bytes,
+        media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
